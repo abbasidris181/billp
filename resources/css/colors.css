@@ -1,0 +1,34 @@
+:root {
+    --site-background: #FFFFFF;
+    --site-section: #F5F5F7;
+    --site-text: #1D1D1F;
+    --site-secondary: #6E6E73;
+    --site-link: #0066CC;
+    --site-dark-link: #2997FF;
+    --site-primary: #0071E3;
+    --site-primary-hover: #0076DF;
+    --site-primary-pressed: #006EDB;
+    --site-primary-text: #FFFFFF;
+    --site-focus: #0071E3;
+    --site-nav-background: rgba(250, 250, 252, 0.8);
+    --site-nav-text: rgba(0, 0, 0, 0.8);
+    --site-nav-hover: #000000;
+    --site-footer-heading: rgba(0, 0, 0, 0.88);
+    --site-footer-link: rgba(0, 0, 0, 0.72);
+    --site-footer-legal: rgba(0, 0, 0, 0.56);
+    --site-footer-divider: rgba(0, 0, 0, 0.16);
+}
+
+body {
+    background: var(--site-background);
+    color: var(--site-text);
+}
+
+footer {
+    background: var(--site-section);
+    color: var(--site-footer-legal);
+    border-top: 1px solid var(--site-footer-divider);
+}
+
+footer :is(h2, h3, h4) { color: var(--site-footer-heading); }
+footer a { color: var(--site-footer-link); }

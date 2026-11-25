@@ -1,0 +1,9 @@
+# Replace CPANEL_USER, the project directory, and the PHP CLI path for your host.
+# In cPanel → Cron Jobs, set all five schedule fields to * for each entry.
+# Paste the command after the five stars into the cPanel Command field.
+
+# Queue due status checks and recover interrupted submissions.
+* * * * * cd /home/CPANEL_USER/billp && /opt/cpanel/ea-php85/root/usr/bin/php artisan schedule:run >> storage/logs/scheduler.log 2>&1
+
+# Process Instant-ipe jobs, with a lock to prevent overlapping workers.
+* * * * * cd /home/CPANEL_USER/billp && /usr/bin/flock -n storage/instant-ipe-worker.lock /opt/cpanel/ea-php85/root/usr/bin/php artisan queue:work database --queue=instant-ipe --stop-when-empty --max-time=55 --timeout=45 --tries=1 >> storage/logs/instant-ipe-worker.log 2>&1

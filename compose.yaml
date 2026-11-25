@@ -1,0 +1,78 @@
+services:
+  server:
+    image: billp-server
+    build: .
+    volumes:
+      - private-files:/app/storage/app/private
+    env_file: &app-env-file
+      - path: .env
+        required: false
+    environment: &app-environment
+      APP_URL: ${APP_URL:-http://localhost:${APP_PORT:-8000}}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DOCKER_DB_DATABASE:-billp}
+      DB_USERNAME: ${DOCKER_DB_USERNAME:-billp}
+      DB_PASSWORD: ${DOCKER_DB_PASSWORD:-billp-local}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/login') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  worker:
+    image: billp-server
+    env_file: *app-env-file
+    environment: *app-environment
+    command: ["php", "artisan", "queue:work", "database", "--queue=instant-ipe", "--sleep=1", "--tries=1", "--timeout=45"]
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    image: billp-server
+    env_file: *app-env-file
+    environment: *app-environment
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DOCKER_DB_DATABASE:-billp}
+      MYSQL_USER: ${DOCKER_DB_USERNAME:-billp}
+      MYSQL_PASSWORD: ${DOCKER_DB_PASSWORD:-billp-local}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_DB_ROOT_PASSWORD:-billp-root-local}
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysql --protocol=TCP -h 127.0.0.1 -u \"$$MYSQL_USER\" --password=\"$$MYSQL_PASSWORD\" \"$$MYSQL_DATABASE\" -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    environment:
+      PMA_HOST: mysql
+    ports:
+      - "127.0.0.1:${PHPMYADMIN_PORT:-8080}:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  private-files:

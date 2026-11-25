@@ -1,0 +1,100 @@
+:root {
+    --site-font-display: "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --site-font-text: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --site-heading-size: 56px;
+    --site-heading-line: 60px;
+    --site-heading-spacing: -0.28px;
+    --site-subtitle-size: 28px;
+    --site-subtitle-line: 32px;
+    --site-subtitle-spacing: 0.196px;
+    --site-card-heading-size: 40px;
+    --site-card-subtitle-size: 21px;
+    --site-cta-size: 17px;
+}
+
+@media (max-width: 1160px) {
+    :root {
+        --site-heading-size: 48px;
+        --site-heading-line: 52.0077px;
+        --site-heading-spacing: -0.096px;
+        --site-subtitle-size: 24px;
+        --site-subtitle-line: 28px;
+        --site-subtitle-spacing: 0.216px;
+        --site-card-heading-size: 32px;
+        --site-card-subtitle-size: 19px;
+    }
+}
+
+@media (max-width: 820px) {
+    :root {
+        --site-heading-size: 32px;
+        --site-heading-line: 36px;
+        --site-heading-spacing: 0.064px;
+        --site-subtitle-size: 19px;
+        --site-subtitle-line: 23px;
+        --site-subtitle-spacing: 0.228px;
+        --site-cta-size: 14px;
+    }
+}
+
+body {
+    font-family: var(--site-font-text);
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 25px;
+    letter-spacing: -0.022em;
+}
+
+h1, h2, h3 {
+    font-family: var(--site-font-display);
+}
+
+.auth-header h1, .portal-heading h1 {
+    font-size: var(--site-heading-size);
+    font-weight: 600;
+    line-height: var(--site-heading-line);
+    letter-spacing: var(--site-heading-spacing);
+    overflow-wrap: anywhere;
+}
+
+.auth-header p, .portal-heading p {
+    font-family: var(--site-font-display);
+    font-size: var(--site-subtitle-size);
+    font-weight: 400;
+    line-height: var(--site-subtitle-line);
+    letter-spacing: var(--site-subtitle-spacing);
+}
+
+.portal-panel-head h2 {
+    font-size: var(--site-card-heading-size);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
+}
+
+.portal-metric p {
+    font-family: var(--site-font-display);
+    font-size: var(--site-card-subtitle-size);
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: normal;
+}
+
+.auth-submit, .portal-btn-primary {
+    font-family: var(--site-font-text);
+    font-size: var(--site-cta-size);
+    font-weight: 400;
+}
+
+@media (min-width: 821px) {
+    .portal-nav-link, .portal-nav-label, .portal-signout button {
+        font-size: 12px;
+        font-weight: 400;
+    }
+}
+
+.auth-footer {
+    font-size: 12px;
+    font-weight: 400;
+}
