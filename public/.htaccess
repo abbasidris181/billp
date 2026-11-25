@@ -5,6 +5,13 @@
 
     RewriteEngine On
 
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^\.well-known/(?:acme-challenge|pki-validation)/[A-Za-z0-9_.-]+$ - [END]
+    RewriteRule (^|/)\. - [F,END]
+
+    RewriteCond %{THE_REQUEST} "\s/+public(?:/index\.php)?/?[?\s]"
+    RewriteRule ^(?:index\.php)?$ / [R=308,END]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

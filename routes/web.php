@@ -9,10 +9,10 @@ use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'auth.login')->middleware('guest')->name('home');
+Route::view('/', 'welcome')->middleware('guest')->name('home');
 
 Route::middleware('guest')->group(function () {
-    Route::view('/login', 'auth.login')->name('login');
+    Route::view('/login', 'welcome')->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
     Route::view('/register', 'auth.register')->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.store');

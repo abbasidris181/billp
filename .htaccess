@@ -1,0 +1,34 @@
+# Apache fallback for hosts with the project directory as the document root.
+# The usual deployment can serve public/ as its document root.
+Options -Indexes -MultiViews
+
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Allow certificate validation files placed at the hosting document root.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^\.well-known/(?:acme-challenge|pki-validation)/[A-Za-z0-9_.-]+$ - [END]
+
+    # Never serve project files directly.
+    RewriteRule (^|/)\. - [F,END]
+    RewriteRule ^(?:app|bootstrap|config|database|deploy|node_modules|resources|routes|tests|vendor)(?:/|$) - [F,END,NC]
+    RewriteRule ^storage/(?:app|framework|logs)(?:/|$) - [F,END,NC]
+    RewriteRule ^(?:artisan|composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|vite\.config\.js|Dockerfile|compose\.ya?ml)$ - [F,END,NC]
+
+    # Preserve request headers through the internal rewrite.
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteCond %{HTTP:X-XSRF-Token} .
+    RewriteRule ^ - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Only these known public files bypass the application.
+    RewriteRule ^((?:favicon\.ico|robots\.txt)|build/assets/[A-Za-z0-9._-]+\.(?:css|js|woff2?|png|webp|svg))$ public/$1 [END]
+
+    RewriteRule ^public(?:/index\.php)?/?$ / [R=308,END]
+    RewriteRule ^public/ - [F,END]
+    RewriteRule ^ public/index.php [END]
+</IfModule>
