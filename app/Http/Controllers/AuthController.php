@@ -47,7 +47,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) Auth::user()->session_version);
 
-        $destination = Auth::user()->hasVerifiedEmail() ? 'account' : 'verification.notice';
+        $destination = Auth::user()->needsSignupEmailVerification() ? 'verification.notice' : 'account';
 
         return redirect()->intended(route($destination));
     }
@@ -57,11 +57,12 @@ class AuthController extends Controller
         $data = $request->validated();
 
         try {
-            $user = User::create([
+            $user = User::forceCreate([
                 'name' => $data['first_name'].' '.$data['last_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => $data['password'],
+                'email_verification_required' => true,
             ]);
         } catch (UniqueConstraintViolationException) {
             foreach (['email', 'phone'] as $field) {
@@ -88,9 +89,9 @@ class AuthController extends Controller
 
     public function verificationNotice(Request $request): View|RedirectResponse
     {
-        return $request->user()->hasVerifiedEmail()
-            ? to_route('account')
-            : view('auth.verify-email', ['email' => $request->user()->email]);
+        return $request->user()->needsSignupEmailVerification()
+            ? view('auth.verify-email', ['email' => $request->user()->email])
+            : to_route('account');
     }
 
     public function resendVerification(Request $request): RedirectResponse

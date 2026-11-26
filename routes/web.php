@@ -7,6 +7,7 @@ use App\Http\Controllers\InstantIpeController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\RequireSignupEmailVerification;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
@@ -41,7 +42,7 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::middleware(['auth', EnsureAccountIsActive::class, 'verified'])->group(function () {
+Route::middleware(['auth', EnsureAccountIsActive::class, RequireSignupEmailVerification::class])->group(function () {
     Route::get('/account', [DashboardController::class, 'index'])->name('account');
     Route::get('/requests', [DashboardController::class, 'requests'])->name('portal.requests');
     Route::get('/requests/export', [DashboardController::class, 'export'])->name('portal.export');

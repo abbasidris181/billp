@@ -26,6 +26,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return substr($key, 0, 26);
     }
 
+    public function needsSignupEmailVerification(): bool
+    {
+        return $this->email_verification_required === true && ! $this->hasVerifiedEmail();
+    }
+
     public function isActive(): bool
     {
         return ($this->account_status ?? 'active') === 'active';
@@ -40,6 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_verification_required' => 'boolean',
             'is_admin' => 'boolean',
             'api_key' => 'encrypted',
             'password' => 'hashed',

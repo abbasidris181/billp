@@ -158,4 +158,14 @@ class AuthTest extends TestCase
         $this->assertSame(1, (int) $user->fresh()->session_version);
         $this->from($url)->post(route('password.update'), $body)->assertRedirect($url)->assertSessionHasErrors('email');
     }
+
+    public function test_existing_unverified_users_can_sign_in_without_verifying(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        $this->post(route('login.store'), ['identifier' => $user->email, 'password' => 'password'])
+            ->assertRedirect(route('account'));
+        $this->get(route('account'))->assertOk();
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
 }
