@@ -4,9 +4,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstantIpeController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->middleware('guest')->name('home');
@@ -14,11 +16,32 @@ Route::view('/', 'welcome')->middleware('guest')->name('home');
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'welcome')->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    Route::view('/forgot-password', 'auth.forgot-password')->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'send'])
+        ->middleware('throttle:6,1,password-request:')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])
+        ->middleware('cache.headers:private;no_store')->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:6,1,password-reset:')->name('password.update');
     Route::view('/register', 'auth.register')->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.store');
 });
 
 Route::middleware(['auth', EnsureAccountIsActive::class])->group(function () {
+    Route::get('/email/verify', [AuthController::class, 'verificationNotice'])
+        ->middleware('cache.headers:private;no_store')->name('verification.notice');
+    Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
+        ->middleware('throttle:6,1,email-verification:')->name('verification.send');
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request): RedirectResponse {
+        $request->fulfill();
+
+        return to_route('account')->with('notice', 'Email address verified.');
+    })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+Route::middleware(['auth', EnsureAccountIsActive::class, 'verified'])->group(function () {
     Route::get('/account', [DashboardController::class, 'index'])->name('account');
     Route::get('/requests', [DashboardController::class, 'requests'])->name('portal.requests');
     Route::get('/requests/export', [DashboardController::class, 'export'])->name('portal.export');
@@ -56,12 +79,6 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function () {
         Route::get('/content/{category}', [DashboardAdminController::class, 'content'])->whereIn('category', ['services', 'docs', 'policies'])->name('content');
         Route::post('/content/{category}', [DashboardAdminController::class, 'saveContent'])->whereIn('category', ['services', 'docs', 'policies'])->name('publish');
     });
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $request->fulfill();
-
-        return to_route('account')->with('notice', 'Email address verified.');
-    })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
-
     Route::middleware('can:manage-users')->prefix('admin/users')->name('admin.users.')->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
         Route::get('/create', [UserManagementController::class, 'create'])->name('create');
@@ -74,6 +91,4 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function () {
         Route::post('/{user}/balance', [UserManagementController::class, 'adjustBalance'])->name('balance');
         Route::post('/{user}/status', [UserManagementController::class, 'status'])->name('status');
     });
-
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

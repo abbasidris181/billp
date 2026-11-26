@@ -1,4 +1,4 @@
-@props(['name', 'label', 'type' => 'text', 'autocomplete'])
+@props(['name', 'label', 'type' => 'text', 'autocomplete', 'value' => null])
 
 <div @class(['auth-field', 'auth-field-error' => $errors->has($name)])>
     <div class="auth-input-wrap">
@@ -9,7 +9,7 @@
             type="{{ $type }}"
             autocomplete="{{ $autocomplete }}"
             placeholder=" "
-            @if ($type !== 'password') value="{{ old($name) }}" @endif
+            @if ($type !== 'password') value="{{ old($name, $value) }}" @endif
             @error($name) aria-invalid="true" aria-describedby="{{ $name }}-error" @enderror
             required
         >

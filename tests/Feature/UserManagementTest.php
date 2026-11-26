@@ -38,6 +38,7 @@ class UserManagementTest extends TestCase
         $this->get(route('admin.users.edit', $user))->assertOk()->assertSee('123.45');
         $this->get(route('admin.users.index', ['q' => 'client@']))->assertOk()
             ->assertSee(['Example Client', 'Example Company', 'Unverified']);
+        $user->markEmailAsVerified();
         $this->actingAs($user->fresh())->get(route('portal.pricing'))->assertOk()->assertSee('₦123.45')->assertDontSee('₦300.00');
     }
 

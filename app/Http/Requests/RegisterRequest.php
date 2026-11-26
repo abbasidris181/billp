@@ -31,6 +31,7 @@ class RegisterRequest extends FormRequest
                 'bail',
                 'required',
                 'string',
+                'confirmed',
                 Password::min(8),
                 function (string $attribute, string $value, Closure $fail): void {
                     if (strlen($value) > 72 || str_contains($value, "\0")) {

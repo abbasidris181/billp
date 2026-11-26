@@ -5,6 +5,9 @@
 @section('subtitle', 'Log in to your '.config('app.name').' account.')
 
 @section('content')
+    @if (session('status'))
+        <p class="portal-feedback" role="status">{{ session('status') }}</p>
+    @endif
     <form method="POST" action="{{ route('login.store') }}" aria-labelledby="form-heading">
         @csrf
         <h2 id="form-heading" class="auth-form-heading">Log in with email or phone</h2>
@@ -14,6 +17,7 @@
         </div>
         <button class="auth-submit" type="submit">Log In</button>
     </form>
+    <a class="auth-switch" href="{{ route('password.request') }}">Forgot password?</a>
     <hr class="auth-divider auth-switch-divider">
     <a class="auth-switch" href="{{ route('register') }}">Don’t have an account? Sign up</a>
 @endsection

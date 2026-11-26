@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -45,7 +47,9 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) Auth::user()->session_version);
 
-        return redirect()->intended(route('account'));
+        $destination = Auth::user()->hasVerifiedEmail() ? 'account' : 'verification.notice';
+
+        return redirect()->intended(route($destination));
     }
 
     public function register(RegisterRequest $request): RedirectResponse
@@ -69,13 +73,46 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['email' => 'An account with these details already exists.']);
         }
 
-        event(new Registered($user));
-
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) Auth::user()->session_version);
 
-        return to_route('account');
+        try {
+            event(new Registered($user));
+        } catch (TransportExceptionInterface $exception) {
+            return $this->verificationDeliveryFailed($exception);
+        }
+
+        return to_route('verification.notice');
+    }
+
+    public function verificationNotice(Request $request): View|RedirectResponse
+    {
+        return $request->user()->hasVerifiedEmail()
+            ? to_route('account')
+            : view('auth.verify-email', ['email' => $request->user()->email]);
+    }
+
+    public function resendVerification(Request $request): RedirectResponse
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return to_route('account');
+        }
+
+        try {
+            $request->user()->sendEmailVerificationNotification();
+        } catch (TransportExceptionInterface $exception) {
+            return $this->verificationDeliveryFailed($exception);
+        }
+
+        return to_route('verification.notice')->with('verification_sent', true);
+    }
+
+    private function verificationDeliveryFailed(TransportExceptionInterface $exception): RedirectResponse
+    {
+        report($exception);
+
+        return to_route('verification.notice')->with('verification_delivery_failed', true);
     }
 
     public function logout(Request $request): RedirectResponse

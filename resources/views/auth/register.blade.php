@@ -22,6 +22,7 @@
                     <span class="auth-strength-label" aria-live="polite">Password strength</span>
                 </div>
             </div>
+            <x-auth.field name="password_confirmation" label="Confirm password" type="password" autocomplete="new-password" minlength="8" />
         </div>
         <button class="auth-submit" type="submit">Sign Up</button>
     </form>
