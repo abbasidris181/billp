@@ -172,7 +172,7 @@ class VerificationApiTest extends TestCase
 
         foreach (['v1', 'v2', 'v3'] as $version) {
             $index = $this->get(route('portal.page', 'docs-'.$version))->assertOk();
-            $services = $version === 'v2' ? ['nin', 'phone'] : ['nin', 'phone', 'bvn', 'personalization', 'ipeclearing'];
+            $services = $version === 'v2' ? ['nin', 'phone', 'bvn'] : ['nin', 'phone', 'bvn', 'personalization', 'ipeclearing'];
             foreach ($services as $service) {
                 $url = route('portal.docs.service', [$version, $service]);
                 $index->assertSee($url);
@@ -225,8 +225,6 @@ class VerificationApiTest extends TestCase
 
         $this->postJson('/api/v2/nin', ['type' => 'phone', 'idNumber' => '12345678901', 'consent' => true], $headers)
             ->assertUnprocessable()->assertJsonValidationErrors('type');
-        $this->postJson('/api/v2/bvn', [], $headers)->assertNotFound();
-        $this->get(route('portal.docs.service', ['v2', 'bvn']))->assertNotFound();
         Http::assertSentCount(2);
     }
 
@@ -242,5 +240,46 @@ class VerificationApiTest extends TestCase
             ->assertSee('POST https://verify.example.test/gateway/api/clearance/status');
         $this->get(route('portal.docs.service', ['v2', 'phone']))->assertOk()
             ->assertSee('POST https://verify.example.test/gateway/api/v2/phone')->assertSee('Use your Example Portal API key');
+    }
+
+    public function test_bvn_by_phone_forwards_the_provider_contract(): void
+    {
+        $user = User::factory()->create();
+        $headers = ['Authorization' => 'Bearer '.$this->issueKey($user)];
+        $payload = ['type' => 'bvn_with_phone', 'idNumber' => '08000000000', 'consent' => true];
+        $identity = ['firstName' => 'EXAMPLE', 'idNumber' => '12345678901', 'bvn' => '12345678901', 'phoneNumber1' => '08000000000',
+            'email' => 'user@example.com', 'enrollmentBank' => 'EXAMPLE BANK', 'stateOfResidence' => ' ', 'watchListed' => 'NO', 'base64Image' => 'BASE64_PHOTO'];
+        Http::fake([self::PROVIDER.'/api/v2/verify' => Http::response(['status' => true, 'cached' => false, 'message' => $identity])]);
+
+        $response = $this->postJson(route('api.v1.bvn-by-phone'), $payload, $headers)->assertOk()
+            ->assertJsonPath('status', true)->assertJsonFragment($identity);
+        Http::assertSent(fn (Request $request): bool => $request->url() === self::PROVIDER.'/api/v2/verify'
+            && $request->hasHeader('Authorization', 'Bearer mock-provider-token') && $request->data() === $payload);
+        $this->assertDatabaseHas('verification_requests', [
+            'user_id' => $user->id, 'service' => 'bvn-by-phone', 'version' => 'v1', 'reference' => $response->json('transID'), 'result' => null,
+        ]);
+
+        $this->postJson(route('api.v1.bvn-by-phone'), [...$payload, 'idNumber' => '18000000000'], $headers)
+            ->assertUnprocessable()->assertJsonValidationErrors('idNumber');
+        Http::assertSentCount(1);
+        $this->get(route('portal.docs.service', ['v1', 'bvn-by-phone']))->assertOk()->assertSee(['bvn_with_phone', 'phoneNumber1']);
+    }
+
+    public function test_v2_bvn_uses_the_expanded_bvn_provider_contract(): void
+    {
+        $user = User::factory()->create();
+        $headers = ['Authorization' => 'Bearer '.$this->issueKey($user)];
+        $payload = ['type' => 'bvn', 'idNumber' => '12345678901', 'consent' => true];
+        $identity = ['firstName' => 'EXAMPLE', 'idNumber' => '12345678901', 'bvn' => '12345678901', 'phoneNumber1' => '08000000000',
+            'email' => 'user@example.com', 'enrollmentBank' => 'EXAMPLE BANK', 'stateOfResidence' => ' ', 'watchListed' => 'NO', 'base64Image' => 'BASE64_PHOTO'];
+        Http::fake([self::PROVIDER.'/api/v2/verify' => Http::response(['status' => true, 'cached' => false, 'message' => $identity])]);
+
+        $response = $this->postJson(route('api.v2.bvn'), $payload, $headers)->assertOk()->assertJsonFragment($identity);
+        Http::assertSent(fn (Request $request): bool => $request->url() === self::PROVIDER.'/api/v2/verify'
+            && $request->hasHeader('Authorization', 'Bearer mock-provider-token') && $request->data() === $payload);
+        $this->assertDatabaseHas('verification_requests', [
+            'user_id' => $user->id, 'service' => 'bvn', 'version' => 'v2', 'reference' => $response->json('transID'), 'result' => null,
+        ]);
+        $this->get(route('portal.docs.service', ['v2', 'bvn']))->assertOk()->assertSee(['/api/v2/bvn', 'phoneNumber1']);
     }
 }

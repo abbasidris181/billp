@@ -34,7 +34,7 @@ class VerificationProvider
             return response()->json(['status' => false, 'message' => 'Verification is currently unavailable.'], 503);
         }
 
-        $fee = $request->apiVersion() === 'v1' ? $this->errorFee($data['type']) : 0;
+        $fee = $request->apiVersion() === 'v1' ? $this->errorFee($request->service()) : 0;
 
         if ($fee > 0 && $this->balance($request->user()->id) < $fee) {
             return $this->failure(' ', self::INSUFFICIENT_BALANCE, 402);
@@ -86,9 +86,11 @@ class VerificationProvider
 
         $this->record($request, $reference, 'successful');
 
-        $fields = $data['type'] === 'nin'
-            ? [...self::IDENTITY_FIELDS, 'nokState', 'religion', 'status', 'isConsent', 'type', 'country']
-            : self::IDENTITY_FIELDS;
+        $fields = match (true) {
+            $data['type'] === 'nin' => [...self::IDENTITY_FIELDS, 'nokState', 'religion', 'status', 'isConsent', 'type', 'country'],
+            $data['type'] === 'bvn_with_phone', $data['type'] === 'bvn' && $request->apiVersion() === 'v2' => [...self::IDENTITY_FIELDS, 'bvn', 'phoneNumber1', 'email', 'enrollmentBank', 'stateOfResidence', 'watchListed', 'base64Image'],
+            default => self::IDENTITY_FIELDS,
+        };
         $identity = Arr::only($identity, $fields);
 
         if (is_array($identity['address'] ?? null)) {
@@ -147,7 +149,7 @@ class VerificationProvider
 
             DB::table('billing_entries')->insert([
                 'user_id' => $userId,
-                'description' => 'V1 '.strtoupper($request->validated('type')).' error charge · '.$reference,
+                'description' => 'V1 '.strtoupper($request->service()).' error charge · '.$reference,
                 'amount_minor' => -$fee,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -162,7 +164,7 @@ class VerificationProvider
         DB::table('verification_requests')->insert([
             'user_id' => $request->user()->id,
             'reference' => $reference,
-            'service' => $request->validated('type'),
+            'service' => $request->service(),
             'version' => $request->apiVersion(),
             'status' => $status,
             'created_at' => now(),

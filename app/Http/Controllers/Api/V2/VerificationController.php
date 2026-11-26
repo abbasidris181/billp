@@ -11,6 +11,8 @@ class VerificationController extends Controller
 {
     public function __invoke(VerifyIdentityRequest $request, VerificationProvider $provider): JsonResponse
     {
-        return $provider->verify($request, '/api/v1/verify');
+        $path = $request->service() === 'bvn' ? '/api/v2/verify' : '/api/v1/verify';
+
+        return $provider->verify($request, $path);
     }
 }

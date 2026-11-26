@@ -1,3 +1,8 @@
+@php
+    $bvnByPhone = $service === 'bvn-by-phone';
+    $expandedBvn = $bvnByPhone || ($version === 'v2' && $service === 'bvn');
+    $phoneInput = $bvnByPhone || $service === 'phone';
+@endphp
 <section class="portal-panel">
     <header class="portal-panel-head"><h2>Request headers and body</h2></header>
     <div class="portal-panel-body">
@@ -6,8 +11,8 @@
 Content-Type: application/json
 Accept: application/json</pre>
         <h3>Example request body</h3>
-        <pre class="portal-result">{{ json_encode(['type' => $service, 'idNumber' => $service === 'phone' ? '08012345678' : '12345678901', 'consent' => true], JSON_PRETTY_PRINT) }}</pre>
-        <p><code>idNumber</code> must be an 11-digit string{{ $service === 'phone' ? ' beginning with 0' : '' }}. Send the JSON boolean <code>true</code> for <code>consent</code>.</p>
+        <pre class="portal-result">{{ json_encode(['type' => $bvnByPhone ? 'bvn_with_phone' : $service, 'idNumber' => $bvnByPhone ? '08000000000' : ($phoneInput ? '08012345678' : '12345678901'), 'consent' => true], JSON_PRETTY_PRINT) }}</pre>
+        <p><code>idNumber</code> must be an 11-digit string{{ $phoneInput ? ' beginning with 0' : '' }}. Send the JSON boolean <code>true</code> for <code>consent</code>.</p>
     </div>
 </section>
 
@@ -22,7 +27,7 @@ Accept: application/json</pre>
     "firstName": "EXAMPLE",
     "middleName": " ",
     "lastName": "USER",
-    "mobile": "{{ $service === 'nin' ? ' ' : '08012345678' }}",
+    "mobile": "{{ $service === 'nin' || $expandedBvn ? ' ' : '08012345678' }}",
     "dateOfBirth": "23-11-1995",
     "gender": "M",
     "address": {
@@ -52,7 +57,14 @@ Accept: application/json</pre>
     "status": "found",
     "isConsent": true,
     "type": "nin",
-    "country": "NG"@endif
+    "country": "NG"@elseif ($expandedBvn),
+    "bvn": "12345678901",
+    "phoneNumber1": "08000000000",
+    "email": "user@example.com",
+    "enrollmentBank": "EXAMPLE BANK",
+    "stateOfResidence": " ",
+    "watchListed": "NO",
+    "base64Image": "BASE64_PHOTO"@endif
   },
   "transID": "YOUR_TRANSACTION_REFERENCE"
 }</pre>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\BvnByPhoneController;
 use App\Http\Controllers\Api\V1\BvnController;
 use App\Http\Controllers\Api\V1\IpeClearingController;
 use App\Http\Controllers\Api\V1\NinController;
@@ -12,11 +13,13 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('api.v1.')->middleware([AuthenticateApiKey::class, 'throttle:60,1'])->group(function () {
     Route::post('/nin', NinController::class)->defaults('verification_type', 'nin')->name('nin');
     Route::post('/phone', PhoneController::class)->defaults('verification_type', 'phone')->name('phone');
+    Route::post('/bvn-by-phone', BvnByPhoneController::class)->defaults('verification_type', 'bvn_with_phone')->defaults('verification_service', 'bvn-by-phone')->name('bvn-by-phone');
     Route::post('/bvn', BvnController::class)->defaults('verification_type', 'bvn')->name('bvn');
 });
 
 Route::prefix('v2')->name('api.v2.')->middleware([AuthenticateApiKey::class, 'throttle:60,1'])->group(function () {
     Route::post('/nin', VerificationController::class)->defaults('verification_type', 'nin')->defaults('verification_version', 'v2')->name('nin');
+    Route::post('/bvn', VerificationController::class)->defaults('verification_type', 'bvn')->defaults('verification_version', 'v2')->name('bvn');
     Route::post('/phone', VerificationController::class)->defaults('verification_type', 'phone')->defaults('verification_version', 'v2')->name('phone');
 });
 
