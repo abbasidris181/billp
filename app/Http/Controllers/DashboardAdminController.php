@@ -126,14 +126,25 @@ class DashboardAdminController extends Controller
         $data = $request->validate([
             'service' => ['required', 'string', 'max:100', 'not_regex:/\Ainstant-ipe-bulk\z/i'],
             'version' => ['required', Rule::in(['v1', 'v2', 'v3'])],
-            'price_minor' => ['required', 'integer', 'min:0', 'max:1000000000'],
-            'error_charge_minor' => ['required', 'integer', 'min:0', 'max:1000000000'],
+            'price' => ['required', 'decimal:0,2', 'min:0', 'max:10000000'],
+            'error_charge' => ['nullable', 'decimal:0,2', 'min:0', 'max:10000000'],
             'available' => ['required', 'boolean'],
         ]);
+
+        $data['price_minor'] = $this->minorUnits((string) $data['price']);
+        $data['error_charge_minor'] = $this->minorUnits((string) ($data['error_charge'] ?? '0'));
+        unset($data['price'], $data['error_charge']);
 
         DB::table('service_prices')->upsert([$data], ['service', 'version'], ['price_minor', 'error_charge_minor', 'available']);
 
         return to_route('admin.catalog')->with('notice', 'Service pricing saved.');
+    }
+
+    private function minorUnits(string $amount): int
+    {
+        [$whole, $fraction] = array_pad(explode('.', $amount, 2), 2, '');
+
+        return ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
     }
 
     public function content(string $category): View

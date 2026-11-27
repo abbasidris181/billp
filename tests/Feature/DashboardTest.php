@@ -96,10 +96,10 @@ class DashboardTest extends TestCase
         $this->post(route('admin.price'), [
             'service' => 'Identity',
             'version' => 'v3',
-            'price_minor' => 20000,
-            'error_charge_minor' => 1000,
+            'price' => '200.00',
             'available' => '1',
         ])->assertRedirect(route('admin.catalog'));
+        $this->assertDatabaseHas('service_prices', ['service' => 'Identity', 'price_minor' => 20000, 'error_charge_minor' => 0]);
         $this->get(route('admin.catalog'))->assertOk()->assertSee(['Identity', 'V3', '₦200.00']);
         $this->get(route('admin.content', 'docs'))->assertOk();
         $this->post(route('admin.publish', 'docs'), ['slug' => 'v3', 'title' => 'Version three', 'body' => '<script>Example</script>'])

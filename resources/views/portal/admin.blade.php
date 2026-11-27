@@ -82,7 +82,7 @@
                                 <td><strong>{{ $price->label }}</strong></td>
                                 <td>{{ strtoupper($price->version) }}</td>
                                 <td>@if($price->price_minor === null)Not set @else<x-portal.amount :minor="$price->price_minor" />@endif</td>
-                                <td>@if($price->error_charge_minor === null)Not set @else<x-portal.amount :minor="$price->error_charge_minor" />@endif</td>
+                                <td>@if(!$price->error_charge_minor)None @else<x-portal.amount :minor="$price->error_charge_minor" />@endif</td>
                                 <td><x-portal.status :status="$price->available ? 'available' : 'unavailable'" /></td>
                                 <td>
                                     <details>
@@ -97,7 +97,7 @@
                 @if($prices->hasPages())<div class="portal-pagination">{{ $prices->links('pagination::simple-tailwind') }}</div>@endif
             </section>
             <details class="portal-panel portal-edit">
-                <summary><strong>Add another service price</strong><span>Amounts in kobo</span></summary>
+                <summary><strong>Add another service price</strong><span>Amounts in naira</span></summary>
                 <x-portal.price-form />
             </details>
             @break
